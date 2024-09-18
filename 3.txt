@@ -1,0 +1,1 @@
+https://github.com/mayankkagrawal/DevOps-Interview/blob/main/gitlab-ci.yml

@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: designer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kodekloud.session/component: designer
+  template:
+    metadata:
+      labels:
+        kodekloud.session/component: designer
+    spec:
+      hostname: designer
+      containers:
+        - name: designer
+          image: alpine
+          ports:
+            - name: designer
+              containerPort: 8080
+          env:
+            - name: APP_NAME
+              value: designer
+            - name: SHARED_DIR
+              value: /kodekloudapp
+          command: ["sh", "-c", "while true; do echo 'Hello from designer' > /kodekloudapp/test.txt; sleep 100; done"]
+          volumeMounts:
+            - name: kodekloudapp-storage
+              mountPath: /kodekloudapp
+      volumes:
+        - name: kodekloudapp-storage
+          hostPath:
+            path: /data/kodekloudapp
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: designer
+spec:
+  selector:
+    kodekloud.session/component: designer
+  clusterIP: None
+  ports:
+    - name: designer
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kodekloud.session/component: app
+  template:
+    metadata:
+      labels:
+        kodekloud.session/component: app
+    spec:
+      hostname: app
+      containers:
+        - name: app
+          image: alpine
+          ports:
+            - name: app
+              containerPort: 8080
+          env:
+            - name: APP_NAME
+              value: app
+            - name: SHARED_DIR
+              value: /kodekloudapp
+          command: ["sh", "-c", "while true; do sleep 10; cat /kodekloudapp/test.txt; sleep 90; done"]
+          volumeMounts:
+            - name: kodekloudapp-storage
+              mountPath: /kodekloudapp
+      volumes:
+        - name: kodekloudapp-storage
+          hostPath:
+            path: /data/kodekloudapp
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+spec:
+  selector:
+    kodekloud.session/component: app
+  clusterIP: None
+  ports:
+    - name: app
+      port: 8080
+      targetPort: 8080
+---

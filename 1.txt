@@ -1,0 +1,44 @@
+# Prerequisites
+1. gcloud auth login (To authenticate with GCP)
+2. gcloud config set project <PROJECT_ID> (Set project id)
+
+
+1. List All Persistent Disks
+First, get a list of all SSD disks in your project and their corresponding VM instances:
+
+gcloud compute disks list --filter="type:(pd-standard)" --format="value(sizeGb, name, zone)"
+
+2. List All VM Instances
+Get a list of all VM instances and their associated disks:
+
+gcloud compute instances list --format="table(name, disks[].deviceName)"
+
+3. Calculate the Disk Cost
+According to GCP pricing calculator for region asia-south1 for zonal pd ssd, price is approx 17 RS/GB per month
+
+to minimise the effort
+
+#!/bin/bash
+
+# Set the cost per GB for SSD disks
+SSD_COST_PER_GB=17
+
+# Initialize a variable to store the total cost
+total_cost=0
+
+# Get the list of SSD persistent disks with their size in GB
+echo "Fetching SSD disk information..."
+gcloud compute disks list --filter="type:(pd-standard)" --format="value(sizeGb)" > disks.txt
+
+# Read each disk size and calculate the total cost
+while read -r disk_size; do
+    # Calculate the cost for each disk and add it to the total cost
+    disk_cost=$(echo "$disk_size * $SSD_COST_PER_GB" | bc)
+    total_cost=$(echo "$total_cost + $disk_cost" | bc)
+done < disks.txt
+
+# Output the total cost of all SSD persistent disks
+echo "Total Estimated Monthly Cost of SSD Disks: \$$total_cost"
+
+# Cleanup
+rm disks.txt
